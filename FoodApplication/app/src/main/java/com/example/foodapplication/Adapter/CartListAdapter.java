@@ -1,14 +1,17 @@
 package com.example.foodapplication.Adapter;
 
+import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.foodapplication.Domain.FoodDomain;
 import com.example.foodapplication.Helper.ManagementCart;
 import com.example.foodapplication.Interface.ChangeNumberItemListener;
@@ -21,11 +24,16 @@ public class CartListAdapter extends RecyclerView.Adapter<CartListAdapter.ViewHo
     private ArrayList<FoodDomain> foodDomains;
     private ManagementCart managementCart;
     private ChangeNumberItemListener changeNumberItemListener;
+    private TextView emptyTxt;
+    private ScrollView scrollView;
 
-    public CartListAdapter(ArrayList<FoodDomain> foodDomains, ManagementCart managementCart, ChangeNumberItemListener changeNumberItemListener) {
+    public CartListAdapter(ArrayList<FoodDomain> foodDomains, Context context, TextView emptyTxt, ScrollView scrollView, ChangeNumberItemListener changeNumberItemListener) {
         this.foodDomains = foodDomains;
-        this.managementCart = managementCart;
+        this.managementCart = new ManagementCart(context);
         this.changeNumberItemListener = changeNumberItemListener;
+        this.emptyTxt = emptyTxt;
+        this.scrollView = scrollView;
+
     }
 
     @NonNull
@@ -37,6 +45,53 @@ public class CartListAdapter extends RecyclerView.Adapter<CartListAdapter.ViewHo
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+
+        holder.title.setText(foodDomains.get(position).getTitle());
+        holder.feeEachItem.setText(String.valueOf(foodDomains.get(position).getFee()));
+        holder.totalEachItem.setText(String.valueOf(Math.round((foodDomains.get(position).getNumberInCart() * foodDomains.get(position).getFee()) * 100) / 100));
+        holder.num.setText(String.valueOf(foodDomains.get(position).getNumberInCart()));
+
+        int drawableResourceId = holder.itemView.getContext().getResources().getIdentifier(foodDomains.get(position).getPic()
+                , "drawable", holder.itemView.getContext().getPackageName());
+
+        Glide.with(holder.itemView.getContext())
+                .load(drawableResourceId)
+                .into(holder.pic);
+
+        holder.plusItem.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                managementCart.plusNumberFood(foodDomains, position, new ChangeNumberItemListener() {
+                    @Override
+                    public void changed() {
+                        notifyDataSetChanged();
+                        changeNumberItemListener.changed();
+                    }
+                });
+            }
+        });
+
+        holder.minusItem.setOnClickListener(new View.OnClickListener() {
+
+
+            @Override
+            public void onClick(View view) {
+
+                managementCart.minusNumberFood(foodDomains, position, new ChangeNumberItemListener() {
+
+                    @Override
+                    public void changed() {
+                        if (foodDomains.size() == 0) {
+                            emptyTxt.setVisibility(View.VISIBLE);
+                            scrollView.setVisibility(View.GONE);
+
+                        }
+                        notifyDataSetChanged();
+                        changeNumberItemListener.changed();
+                    }
+                });
+            }
+        });
 
     }
 
@@ -51,8 +106,18 @@ public class CartListAdapter extends RecyclerView.Adapter<CartListAdapter.ViewHo
         ImageView pic, plusItem, minusItem;
         TextView totalEachItem, num;
 
+
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
+
+
+            title = itemView.findViewById(R.id.titleTxt);
+            feeEachItem = itemView.findViewById(R.id.feeEachItem);
+            pic = itemView.findViewById(R.id.picCart);
+            totalEachItem = itemView.findViewById(R.id.totalEachItem);
+            num = itemView.findViewById(R.id.numberItemTxt);
+            plusItem = itemView.findViewById(R.id.plusCardBtn);
+            minusItem = itemView.findViewById(R.id.minusCardBtn);
         }
     }
 

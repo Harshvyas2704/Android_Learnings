@@ -4,12 +4,18 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import com.example.foodapplication.Adapter.CartListAdapter;
 import com.example.foodapplication.Helper.ManagementCart;
+import com.example.foodapplication.Interface.ChangeNumberItemListener;
 import com.example.foodapplication.R;
+import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 public class CartListActivity extends AppCompatActivity {
 
@@ -28,6 +34,28 @@ public class CartListActivity extends AppCompatActivity {
         managementCart = new ManagementCart(this);
         initView();
         initList();
+        calculateCart();
+        bottomNavigation();
+
+    }
+
+    private void bottomNavigation() {
+        FloatingActionButton floatingActionButton = findViewById(R.id.cartBtn);
+        LinearLayout homeBtn = findViewById(R.id.homeBtn);
+
+        floatingActionButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(CartListActivity.this, CartListActivity.class));
+            }
+        });
+
+        homeBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                startActivity(new Intent(CartListActivity.this, MainActivity.class));
+            }
+        });
 
     }
 
@@ -39,11 +67,47 @@ public class CartListActivity extends AppCompatActivity {
         totalTxt = findViewById(R.id.totalTxt);
         emptyTxt = findViewById(R.id.emptyTxt);
         scrollView = findViewById(R.id.scrollView2);
+        recyclerViewList = findViewById(R.id.cartView);
     }
 
     private void initList() {
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
         recyclerViewList.setLayoutManager(linearLayoutManager);
+        adapter = new CartListAdapter(managementCart.getListCart(), this,  emptyTxt, scrollView, new ChangeNumberItemListener() {
+            @Override
+            public void changed() {
+                calculateCart();
+            }
+        });
+
+        recyclerViewList.setAdapter(adapter);
+
+        if(managementCart.getListCart().isEmpty()) {
+
+            emptyTxt.setVisibility(View.VISIBLE);
+            scrollView.setVisibility(View.GONE);
+        }
+        else{
+
+            emptyTxt.setVisibility(View.GONE);
+            scrollView.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void calculateCart() {
+        double percentTax = 0.02;
+
+        double delivery = 10;
+
+        tax = (double) (Math.round((managementCart.getTotalFee() * percentTax) * 100) / 100);
+        double total = Math.round((managementCart.getTotalFee() + tax + delivery) * 100) / 100;
+        double itemTotal = Math.round(managementCart.getTotalFee() * 100) / 100;
+
+        totalFeeTxt.setText("$" + itemTotal);
+        taxTxt.setText("$" + tax);
+        deliveryTxt.setText("$" + delivery);
+        totalTxt.setText("$" + total);
+
     }
 
 }
